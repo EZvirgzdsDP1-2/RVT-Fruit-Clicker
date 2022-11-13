@@ -3,6 +3,8 @@ import * as THREE from 'three'; //THREE JS library
 import { GUI } from './buildDatGui/dat.gui.module.js'; //Dat.gui library
 import { GLTFLoader }  from './jsmThree/loaders/GLTFLoader.js'; //GLTF loader
 import { FBXLoader }  from './jsmThree/loaders/FBXLoader.js'; //FBX loader
+import { InteractionManager } from './threeInteractive/three.interactive.js';//three.interactive
+import { Tween } from './TweenJsDist/tween.esm.js'; //Tween.js 
 
 //GUI change text to different
 GUI.TEXT_OPEN = "Open fruit upgrade";
@@ -17,6 +19,7 @@ const gui = new GUI( {  resizable : false,
                         width: 400  } );
 
 getDatGuiContainer.appendChild(gui.domElement);
+
 
 //Initialize object loader
 const fbxLoader = new FBXLoader();
@@ -47,16 +50,19 @@ camera.rotation.x = -0.2;
 const cubeGeometry = new THREE.BoxGeometry();
 const cubeMaterial = new THREE.MeshBasicMaterial({
     color: 0x000000,
+    opacity: 0.6,
+    transparent: true,
 });
 
-const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+const cubeTree = new THREE.Mesh(cubeGeometry, cubeMaterial);
 
 //Create renderer to render things in scene
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-
+//Initialize Three.Interactive
+const interactionThree = new InteractionManager(renderer, camera, renderer.domElement);
 
 //Window resize event listner
 window.addEventListener(
@@ -65,7 +71,7 @@ window.addEventListener(
         camera.aspect = window.innerWidth / window.innerHeight
         camera.updateProjectionMatrix()
         renderer.setSize(window.innerWidth, window.innerHeight)
-        render()
+        renderer.render(scene, camera);
     },
     false
 )
@@ -108,18 +114,33 @@ function addGltfObject(path) //GLTF and GLB format files
 
 }
 
+//Decrease and increase cube size (later tree size)
+function clickAnimationTree()
+{
+  //cubeTree.scale.x = 0.8;
+  //cubeTree.scale.y = 0.8;
+  //cubeTree.scale.z = 0.8;
+  
+  console.log("Times clicked: " + ++numberCount);
+
+ 
+  
+}
+
 
 //Dat.gui function
 function addGUI()
 {
-  gui.add(cube.scale, 'x', 0, 3).name("Scale x axis"); //first experiment
+  gui.add(cubeTree.scale, 'x', 0, 3).name("Scale x axis"); //first experiment
   gui.add(addFuntionToButton, 'addNumber');
 }
 
 //Add test cube to scene, later to be replaced by in-game objects
 function addTree()
 {
-  scene.add(cube);
+  scene.add(cubeTree);
+
+  interactionThree.add(cubeTree);
 
   //'./resourcesObjects/apple/source/apple.fbx'
 
@@ -131,6 +152,8 @@ function animate()
     requestAnimationFrame(animate);
     //cubeSpinSlow();
 
+    //Tween.update();
+    interactionThree.update();
     renderer.render(scene, camera);
 }
 
@@ -140,13 +163,21 @@ function cubeSpinSlow()
   cube.rotation.y += 0.01;
 }
 
+//Add counting event to object
+cubeTree.addEventListener("click", (Event) =>{
+  //console.log("Times clicked: " + ++numberCount);
+  
+  clickAnimationTree();
+
+});
+
 function init()
 {
   scene.background = new THREE.Color(0xD9D9D9);
   
   addTree();
   addGUI();
-  animate()
+  animate();
 }
 
 init();

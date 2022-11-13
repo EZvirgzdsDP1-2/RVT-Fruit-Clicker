@@ -11,6 +11,12 @@ app.use('/jsmThree/', express.static(path.join(__dirname, 'node_modules/three/ex
 //Dat.gui
 app.use('/buildDatGui/', express.static(path.join(__dirname, 'node_modules/dat.gui/build')));
 
+//Three.Interactive
+app.use('/threeInteractive/', express.static(path.join(__dirname, 'node_modules/three.interactive/build')));
+
+//Tween.js
+app.use('/tweenJsDist/', express.static(path.join(__dirname, 'node_modules/@tweenjs/tween.js/dist')));
+
 //Objects
 app.use('/resourcesObjects/', express.static(path.join(__dirname, 'resources/objects')));
 
