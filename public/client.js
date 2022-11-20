@@ -4,7 +4,7 @@ import { GUI } from './buildDatGui/dat.gui.module.js'; //Dat.gui library
 import { GLTFLoader }  from './jsmThree/loaders/GLTFLoader.js'; //GLTF loader
 import { FBXLoader }  from './jsmThree/loaders/FBXLoader.js'; //FBX loader
 import { InteractionManager } from './threeInteractive/three.interactive.js';//three.interactive
-import { Tween } from './TweenJsDist/tween.esm.js'; //Tween.js 
+import * as TWEEN from './TweenJsDist/tween.esm.js'; //Tween.js  ,"tween": "./TweenJsDist/tween.esm.js" { Tween }
 
 //GUI change text to different
 GUI.TEXT_OPEN = "Open fruit upgrade";
@@ -32,6 +32,9 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 //Experimental, delete later when not needed
 let numberCount = 0;
 
+//Object variables which will be used when playing the game
+let appleTree; //= new THREE.Object3D()
+
 //Add funtion to GUI interface
 const addFuntionToButton = {
   addNumber: function()
@@ -50,13 +53,16 @@ camera.rotation.x = -0.2;
 const cubeGeometry = new THREE.BoxGeometry();
 const cubeMaterial = new THREE.MeshBasicMaterial({
     color: 0x000000,
-    opacity: 0.6,
+    opacity: 0.1,
     transparent: true,
 });
 
 const cubeTree = new THREE.Mesh(cubeGeometry, cubeMaterial);
 
-//Create renderer to render things in scene
+cubeTree.userData.isTweening = false; //Related to the animation the tree will do.
+//Is true when animation is in progress and false when not
+
+//Create renderer to render objects in the scene
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
@@ -65,8 +71,7 @@ document.body.appendChild(renderer.domElement);
 const interactionThree = new InteractionManager(renderer, camera, renderer.domElement);
 
 //Window resize event listner
-window.addEventListener(
-    'resize',
+window.addEventListener('resize',
     () => {
         camera.aspect = window.innerWidth / window.innerHeight
         camera.updateProjectionMatrix()
@@ -78,9 +83,8 @@ window.addEventListener(
 
 //Function object loader
 
-function addFbxObject(path) //FBX file format
+function addFbxObject(path, name) //FBX file format
 {
-
   fbxLoader.load(path, function(fbx) {
 
     let objectToAdd = new THREE.Object3D();
@@ -96,35 +100,49 @@ function addFbxObject(path) //FBX file format
 
 }
 
-function addGltfObject(path) //GLTF and GLB format files
+function addGltfObject(path, name) //GLTF and GLB format files
 {
-
   gltfLoader.load(path, function(gltf) {
 
-    let objectToAdd = new THREE.Object3D();
+    //let objectToAdd = new THREE.Object3D();
 
-    objectToAdd = gltf;
+    //objectToAdd = gltf;
 
-    scene.add( gltf );
+    scene.add( gltf.scene );
 
   }, undefined, function (error)
   {
     console.error(error);
   } );
-
 }
 
 //Decrease and increase cube size (later tree size)
 function clickAnimationTree()
 {
-  //cubeTree.scale.x = 0.8;
-  //cubeTree.scale.y = 0.8;
-  //cubeTree.scale.z = 0.8;
-  
   console.log("Times clicked: " + ++numberCount);
 
+  if(cubeTree.userData.isTweening) return;
+
+  let tweenDeflate = new TWEEN.Tween(cubeTree.scale).to({
+    x:0.8,
+    y:0.8,
+    z:0.8
+
+  }, 90).easing(TWEEN.Easing.Back.In).onStart( ()=>{
+      cubeTree.userData.isTweening = true;
+  });
  
+  let tweenInflate = new TWEEN.Tween(cubeTree.scale).to({
+    x:1,
+    y:1,
+    z:1
+  }, 50).onComplete( ()=>{
+    cubeTree.userData.isTweening = false;
+  });
   
+  
+  tweenDeflate.chain(tweenInflate);
+  tweenDeflate.start();
 }
 
 
@@ -142,8 +160,16 @@ function addTree()
 
   interactionThree.add(cubeTree);
 
+  appleTree; 
+  
+  addGltfObject('./resourcesObjects/appleTree/source/appletree.glb');
+
+  //scene.add(appleTree.scene);
   //'./resourcesObjects/apple/source/apple.fbx'
 
+  //appleTree.scale.x = 3;
+  //appleTree.scale.y = 3;
+  //appleTree.scale.z = 3;
 }
 
 //Animate the scene
@@ -152,15 +178,15 @@ function animate()
     requestAnimationFrame(animate);
     //cubeSpinSlow();
 
-    //Tween.update();
+    TWEEN.update();
     interactionThree.update();
     renderer.render(scene, camera);
 }
 
 //Cube spin animation, later to be replaced by spinning tree
-function cubeSpinSlow()
+function treeSpinSlow()
 {
-  cube.rotation.y += 0.01;
+  cubeTree.rotation.y += 0.01;
 }
 
 //Add counting event to object
