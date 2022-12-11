@@ -15,13 +15,22 @@
     <script type="importmap">
         {
             "imports": {
-                "three": "./buildThree/three.module.js"
+                "three": "./buildThree/three.module.js",
+                "gsap": "./gsapDirect/index.js"
             }
         }
     </script>
 </head>
 <body>
+    <div class="cssOverlay" id="valueWindow">
+        <div id="fruitCountLine">
+            <div class="cssOverlay" id="fruitCountText">Fruit count:</div>
+            <div class="cssOverlay" id="appleCounter"></div>
+        </div>
+        <div id="moneyCountLine">
 
+        </div>
+    </div>
     <div id="datguiContainer"></div>
 
     <script type="module" src="client.js"></script>

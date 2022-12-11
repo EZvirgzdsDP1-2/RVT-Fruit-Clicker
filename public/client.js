@@ -5,6 +5,7 @@ import { GLTFLoader }  from './jsmThree/loaders/GLTFLoader.js'; //GLTF loader
 import { FBXLoader }  from './jsmThree/loaders/FBXLoader.js'; //FBX loader
 import { OBJLoader } from './jsmThree/loaders/OBJLoader.js' //OBJLoader
 import { InteractionManager } from './threeInteractive/three.interactive.js';//three.interactive
+import { gsap } from 'gsap';
 import * as TWEEN from './TweenJsDist/tween.esm.js'; //Tween.js
 
 //GUI change text to different
@@ -21,6 +22,31 @@ const gui = new GUI( {  resizable : false,
 
 getDatGuiContainer.appendChild(gui.domElement);
 
+//CSS resize fruit count window
+
+
+//RNG functions
+function getRandomNumberRange(min, max)
+{
+  return Math.random() * (max - min) + min;
+}
+
+//Clicks per minute calculate function 
+let clicksPerMinute = 0;
+
+let click = 0;
+let clicks = 0;
+
+function calculateClicksPerMinute() {
+    let seconds = new Date().getTime();
+
+    clicks = ((1 / ((seconds - click) / 1000)) * 60);
+    click = seconds;
+    clicksPerMinute = Math.floor(clicks);
+};
+
+let dynamicFruitCooldown = (clicksPerMinute ** -2) * (10 ** 5); //This may be only temporary, because GSAP doesn't support dynamic animation number update
+
 //Geometry and mesh for cube to be clicked on
 const cubeGeometry = new THREE.BoxGeometry();
 const cubeMaterial = new THREE.MeshBasicMaterial({ //For cubeTree
@@ -29,11 +55,21 @@ const cubeMaterial = new THREE.MeshBasicMaterial({ //For cubeTree
     transparent: true,
 });
 
-
 const cubeTree = new THREE.Mesh(cubeGeometry, cubeMaterial); //Cube for appleTree clicking model
 cubeTree.scale.x = 2;
 cubeTree.scale.y = 1.7;
 cubeTree.scale.z = 2;
+
+//Plane geometry for the ground
+const planeGeometry = new THREE.PlaneGeometry(20,2,20);
+const planeMaterial = new THREE.MeshBasicMaterial({
+  color: 0xA0A0A0
+});
+
+const planeGround = new THREE.Mesh(planeGeometry, planeMaterial);
+planeGround.position.set(0, -0.3, 0);
+planeGround.scale.set(6,3,0);
+planeGround.rotatex = -90;
 
 //Load manager
 const loadingManager = new THREE.LoadingManager();
@@ -68,20 +104,20 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
 
 //Directional light + adding to scene
-const sceneDirectionalLight = new THREE.DirectionalLight(0xffffff, 4);
-scene.add(sceneDirectionalLight);
+const sceneDirectionalLight = new THREE.DirectionalLight(0xffffff, 4); //Light color and the light brightness
+sceneDirectionalLight.position.set(2,-2,2); //Need to play with this number more to get it right
+
+scene.add(sceneDirectionalLight); //Directional light added to scene so objects can be seen
 
 //Count variables. Important for the gameplay.
 let numberCount = 0;
 
-//Texture loader initializations
-//let appleTreeTextures = await textureLoader.loadAsync('./resourcesObjects/appleTree/textures/gltf_embedded_0.png'); 
-//appleTreeTextures.flipY = false;
-const materialLoader = new THREE.MaterialLoader();
+document.getElementById('appleCounter').innerHTML = numberCount; //Updates HTML DOM with current apple count WILL UNCOMMENT
 
-//let appleTextures = await textureLoader.loadAsync('./resourcesObjects/apple/textures/Apple_BaseColor.png');
+//Texture loader initializations
 let appleTextures = await textureLoader.loadAsync('./resourcesObjects/appleLowerPoly/textures/Gradient_UV_003.png'); //Old one is 'apple' directory
 let pearTextures = await textureLoader.loadAsync('./resourcesObjects/pear/textures/Pear_Geo_initialShadingGroup_BaseColor.png'); 
+//let lemonTextures = await textureLoader.loadAsync('./resourcesObjects/lemon/textures/gltf_embedded_0.png');
 
 //Object variables which will be used when playing the game. This part of the code could be optimized more and use a smarter method of assigning.
 let appleTreeModel = await gltfLoader.loadAsync('./resourcesObjects/appleTree/source/appleTree.glb', function(gltf) 
@@ -94,7 +130,7 @@ let appleTreeModel = await gltfLoader.loadAsync('./resourcesObjects/appleTree/so
   console.error(error);
 } ); 
 
-let appleModel = await fbxLoader.loadAsync('./resourcesObjects/appleLowerPoly/source/Apple_001.fbx', function(fbx) //Adds apple model to 'applesModel' './resourcesObjects/apple/source/Apple.fbx'
+let appleModel = await fbxLoader.loadAsync('./resourcesObjects/appleLowerPoly/source/Apple_001.fbx', function(fbx) //Adds apple model to 'applesModel'
 {
   fbx.name = 'appleModel';
   return fbx;
@@ -124,16 +160,47 @@ let pearModel = await objLoader.loadAsync('./resourcesObjects/pear/source/Lowpol
   console.error(error);
 } );
 
+let peachModel = await fbxLoader.loadAsync('./resourcesObjects/peach/source/Peach.fbx', function(fbx) //Adds a peach model to 'peachModel'
+{
+  fbx.name = 'peachModel';
+  return fbx;
+
+}, undefined, function (error)
+{
+  console.error(error);
+} );
+
+let grassModel = await gltfLoader.loadAsync('./resourcesObjects/grass/sketch.gltf', function(gltf) //Add two lemon models to array 'lemonModels' 
+{   
+  gltf.name = 'grassModel';
+  return gltf;
+
+}, undefined, function (error)
+{
+  console.error(error);
+} ); 
+
+
 //Tween Js functionality
 appleTreeModel.userData.isTweening = false; //Related to the animation the tree will do. Is true when animation is in progress and false when not
 appleModel.userData.isTweening = false;
 
+let peachOpacityVariable;
+let lemonOpacityVariable;
+let pearOpacityVariable;
+let appleOpacityVariable;
+
+//GSAP variables for animations. Mostly for fruit falling from the tree
+const gsapPear = gsap.timeline();
+const gsapApple = gsap.timeline();
+const gsapPeach = gsap.timeline();
+const gsapLemon= gsap.timeline();
 
 //Add funtion to GUI interface
 const addFuntionToButton = {
   addNumber: function()
   {
-    console.log("Times clicked: " + ++numberCount);
+    console.log('The number generated: ' + getRandomNumberRange(0,0.5).toFixed(2));
   }
 };
 
@@ -164,7 +231,18 @@ window.addEventListener('resize',
 //Decrease and increase cube size (later tree size)
 function clickAnimationTree()
 {
-  console.log("Times clicked: " + ++numberCount);
+  //console.log("Times clicked: " + ++numberCount);
+  ++numberCount;
+
+  document.getElementById('appleCounter').innerHTML = numberCount;  
+
+  calculateClicksPerMinute();
+  console.log('Current clicks per minute: '+ clicksPerMinute);
+
+  moveSlowlyPear();//Temporary, will add more fruit
+  moveSlowlyApple();
+  moveSlowlyLemon();
+  moveSlowlyPeach();
 
   if(appleTreeModel.userData.isTweening) return;
 
@@ -196,67 +274,47 @@ function addGUI()
 {
   //gui.add(cubeTree.scale, 'x', 0, 3).name("Scale x axis"); //first experiment
   gui.add(addFuntionToButton, 'addNumber');
-  //gui.add(pearModel.material, 'opacity', 0, 1).name("Scale opacity"); //first experiment
-  //gui.add(cubeApple.position, 'z', 0, 3).name("z coordinates");
+  gui.add(cubeTree.material, 'opacity', 0, 1).name("Scale opacity"); //first experiment
+  gui.add(pearModel.position, 'y', 0, 3).name("y coordinates");
 }
 
 
 //Add test cube to scene, later to be replaced by in-game objects
 function addTree()
 {
+  //scene.add(planeGround); //Seeing if the ground looks good. Can adjust later for testing. Ground can be used as for shadow casting 
+  cubeTree.position.set(0,0.3,0);
   scene.add(cubeTree);
 
   interactionThree.add(cubeTree);
 
   scene.add(appleTreeModel.scene);
 
-  
-  /* Can delete, this texture apply function doesnt work
-  appleTreeModel.scene.traverse ( (o) => {
-    if(o.isMesh)
-    {
-      o.material.map = appleTreeTextures;
-    }
-  } );
-  
-  appleTreeModel.scene.traverse(  function(child)
-  {
-    if(child.isMesh)
-    {
-      if(child.material.map)
-      {
-        child.material.map = appleTreeTextures;
-
-        child.material.map.needsUpdate = true;
-      }
-    }
-  });
-  
-
-  pearModel.traverse ( (o) => { //Testing opacity
-    if(o.isMesh)
-    {
-      o.material.transparent = true;
-      o.material.opacity = 0.5;
-    }
-  } );
-  */
-
   cubeTree.add(appleTreeModel.scene);
 
+  scene.add(grassModel.scene);//Grass model variant No1 UNCOMMENT THIS LATER OR FIND A BETTER TEXTURE
 
-  //Adjusting location of apple tree
-  cubeTree.position.set(0,0.3,0);
+  grassModel.scene.scale.x = 4;
+  grassModel.scene.scale.z = 3.6;
+  grassModel.scene.scale.y = 0.7;
 
-  appleTreeModel.scene.scale.x = 2.7;//2.7  0.01  For appleTreeThreeGLTF
-  appleTreeModel.scene.scale.y = 2.7;//2.7  0.005
-  appleTreeModel.scene.scale.z = 3.6;//3.6  0.01 
+  grassModel.scene.position.x = 0.7;
+  grassModel.scene.position.z = -1.3;
+  grassModel.scene.position.y = -1;
+
+  grassModel.scene.rotation.y = -0.01;
+
+  //Adjusting location and scale of apple tree
+
+  appleTreeModel.scene.scale.x = 2.7;
+  appleTreeModel.scene.scale.y = 2.7;
+  appleTreeModel.scene.scale.z = 3.6;
 
   appleTreeModel.scene.position.x = 0;
   appleTreeModel.scene.position.y = 0;
   appleTreeModel.scene.position.z = -1;
 
-  //Temporary apple model test
+  //Object scaling
   appleModel.scale.x = 0.004;
   appleModel.scale.y = 0.004;
   appleModel.scale.z = 0.004;
@@ -265,96 +323,335 @@ function addTree()
   pearModel.scale.y = 0.01;
   pearModel.scale.z = 0.01;
 
+  peachModel.scale.x = 0.0005;
+  peachModel.scale.y = 0.0005;
+  peachModel.scale.z = 0.0005;
+
+  lemonModel.scene.scale.x = 1;
+  lemonModel.scene.scale.y = 1;
+  lemonModel.scene.scale.z = 1;
+
   appleModel.traverse ( (o) => {
     if(o.isMesh)
     {
       o.material.map = appleTextures;
+      o.material.transparent = true;
+      o.material.opacity = 1;//0
+      appleOpacityVariable = o.material.opacity;
     }
   } );
 
-  pearModel.traverse ( (o) => { //With opacity
+  pearModel.traverse ( (o) => { //Enabeling opacity in pear object
     if(o.isMesh)
     {
       o.material.map = pearTextures;
       o.material.transparent = true;
+      o.material.opacity = 1;//0 
+      pearOpacityVariable = o.material.opacity;
+    }
+  } );
+
+  peachModel.traverse ( (o) => { //Enabeling opacity in peach object 
+    if(o.isMesh)
+    {
+      o.material.transparent = true;
+      o.material.opacity = 1;//0
+      peachOpacityVariable = o.material.opacity;
+    }
+  } );
+
+  lemonModel.scene.traverse ( (o) => { //Enabeling opacity in peach object 
+    if(o.isMesh)
+    {
+      o.material.transparent = true;
       o.material.opacity = 0;
+      lemonOpacityVariable = o.material.opacity;
     }
   } );
 
   scene.add(pearModel);
-  pearModel.position.z = 4;
-  
+  cubeTree.add(pearModel);
+
+  scene.add(peachModel);
+  cubeTree.add(peachModel)
+
   scene.add(appleModel);
+  cubeTree.add(appleModel)
+
+  scene.add(lemonModel.scene);
+  cubeTree.add(lemonModel.scene);
 }
 
 //Animate the scene
 function animate()
 {
     requestAnimationFrame(animate);
+    
     treeSpinSlow();
-    DELETETHIS();
+
+    //pearOpacityAnimation();
+    //peachOpacityAnimation();
+    //appleOpacityAnimation();
+    //lemonOpacityAnimation();
+
+    pearSpinSlow();
+    appleSpinSlow();
+    lemonSpinSlow();
+    peachSpinSlow();
 
     TWEEN.update();
     interactionThree.update();
     renderer.render(scene, camera);
 }
 
-//Cube spin animation, later to be replaced by spinning tree
+
+function moveSlowlyPear()
+{
+  let xCoordinates = getRandomNumberRange(0, 0.3).toFixed(2);
+  let zCoordinates = getRandomNumberRange(0, 0.4).toFixed(2);
+
+  switch(gsapPear.isActive())
+  {
+    case true:
+      //console.log('Is active');
+      break;
+    case false:
+      
+      gsapPear.from(pearModel.position, {
+        x: xCoordinates, y: 0, z: zCoordinates
+      })
+      .to(pearModel.position, {
+        x: xCoordinates, y: -0.89, z: zCoordinates, duration: 0.81
+      });
+      //gsapPear.call( pearOpacityAnimation );
+      break;
+  }
+}
+
+function moveSlowlyApple()
+{
+  let xCoordinates = getRandomNumberRange(0, 0.3).toFixed(3);
+  let zCoordinates = getRandomNumberRange(0, 0.4).toFixed(2);
+
+  switch(gsapApple.isActive())
+  {
+    case true:
+      //console.log('Is active');
+      break;
+    case false:
+      gsapApple.from(appleModel.position, {
+        x: xCoordinates, y: 0, z: zCoordinates
+      })
+      .to(appleModel.position, {
+        x: xCoordinates, y: -0.89, z: zCoordinates, duration: 1
+      });
+      //gsapPear.call( pearOpacityAnimation );
+      break;
+  }
+}
+
+function moveSlowlyLemon()
+{
+  let xCoordinates = getRandomNumberRange(0, 0.4).toFixed(2);
+  let zCoordinates = getRandomNumberRange(0, 0.3).toFixed(3);
+
+  switch(gsapLemon.isActive())
+  {
+    case true:
+      //console.log('Is active');
+      break;
+    case false:
+      gsapLemon.from(lemonModel.scene.position, {
+        x: xCoordinates, y: 0, z: zCoordinates
+      })
+      .to(lemonModel.scene.position, {
+        x: xCoordinates, y: -0.89, z: zCoordinates, duration: 1.2
+      });
+      //gsapPear.call( pearOpacityAnimation );
+      break;
+  }
+}
+
+function moveSlowlyPeach()
+{
+  let xCoordinates = getRandomNumberRange(0, 0.4).toFixed(3);
+  let zCoordinates = getRandomNumberRange(0, 0.4).toFixed(3);
+
+  switch(gsapPeach.isActive())
+  {
+    case true:
+      //console.log('Is active');
+      break;
+    case false:
+      gsapPeach.from(peachModel.position, {
+        x: xCoordinates, y: 0, z: zCoordinates
+      })
+      .to(peachModel.position, {
+        x: xCoordinates, y: -0.89, z: zCoordinates, duration: 0.88
+      });
+      //gsapPear.call( pearOpacityAnimation );
+      break;
+  }
+}
+
+//Cube spin animation. The apple tree is added to cubeTree as a child object.
 function treeSpinSlow()
 {
   cubeTree.rotation.y += 0.01;
 }
 
-let pearOpacityCounter = -200;
-function DELETETHIS() //Opacity function in which the imported object opacity can be changed
+function pearSpinSlow()
 {
-  /*if(pearModel.opacity != 1)
-  {
-    
-    pearModel.traverse ( (o) => { //With opacity
-      if(o.isMesh)
-      {
-        o.material.opacity += 0.02;
-        o.material.needsUpdate = true;
-      }
-    } );
-  }
-  else
-  {
-    console.log("Works?")
+  pearModel.rotation.x += 0.01;
+  pearModel.rotation.z += 0.01;
+}
 
-    pearModel.traverse ( (o) => { //With opacity
+function lemonSpinSlow()
+{
+  lemonModel.scene.rotation.x += 0.01;
+  lemonModel.scene.rotation.z += 0.01;
+}
+
+function appleSpinSlow()
+{
+  appleModel.rotation.x += 0.01;
+  appleModel.rotation.z += 0.01;
+}
+
+function peachSpinSlow()
+{
+  peachModel.rotation.x += 0.01;
+  peachModel.rotation.z += 0.01;
+}
+
+//Opacity animation functions for pear, lemon, apple and peach
+
+function pearOpacityAnimation() //Opacity function in which the imported object opacity can be changed
+{
+ if(pearOpacityVariable > 0) //&& pearFadeOut == true
+  {
+    pearModel.traverse ( (o) => { //Decrease opacity
       if(o.isMesh)
       {
         o.material.opacity -= 0.02;
         o.material.needsUpdate = true;
-      }
-    } );
-  }*/
-  if(pearOpacityCounter < 0)
-  {
-    pearModel.traverse ( (o) => { //With opacity
-      if(o.isMesh)
-      {
-        o.material.opacity += 0.005;
-        o.material.needsUpdate = true;
+        pearOpacityVariable = o.material.opacity;
       }
     } );
     
-    ++pearOpacityCounter;
+    //console.log('Did i get here?: '+pearOpacityVariable);
+
+    if(pearOpacityVariable.toFixed(2) <= 0.00) //pearOpacityCounter = -100;
+    {
+      pearModel.traverse ( (o) => { //Decrease opacity
+        if(o.isMesh)
+        {
+          
+          o.material.opacity = 1;
+          o.material.needsUpdate = true;
+          pearOpacityVariable = o.material.opacity;
+        }
+      } );
+    }
   }
-  else if(pearOpacityCounter >= 0)
+}
+
+let peachOpacityCounter = -100; // -200
+function peachOpacityAnimation() //Opacity function in which the imported object opacity can be changed
+{
+
+  if(peachOpacityCounter < 0)
   {
-    pearModel.traverse ( (o) => { //With opacity
+    peachModel.traverse ( (o) => { //Increase opacity
       if(o.isMesh)
       {
-        o.material.opacity -= 0.005;
+        o.material.opacity += 0.01; //0.005
         o.material.needsUpdate = true;
+        peachOpacityVariable = o.material.opacity;
       }
     } );
     
-    ++pearOpacityCounter;
-    if(pearOpacityCounter == 200) pearOpacityCounter = -200;
+    ++peachOpacityCounter;
+  }
+  else if(peachOpacityCounter >= 0)
+  {
+    peachModel.traverse ( (o) => { //Decrease opacity
+      if(o.isMesh)
+      {
+        o.material.opacity -= 0.01;
+        o.material.needsUpdate = true;
+        peachOpacityVariable = o.material.opacity;
+      }
+    } );
+    
+    ++peachOpacityCounter;
+    if(peachOpacityCounter == 100) peachOpacityCounter = -100;
+  }
+}
+
+let appleOpacityCounter = -40;
+function appleOpacityAnimation() //Opacity function in which the imported object opacity can be changed
+{
+
+  if(appleOpacityCounter < 0)
+  {
+    appleModel.traverse ( (o) => { //Increase opacity
+      if(o.isMesh)
+      {
+        o.material.opacity += 0.025;
+        o.material.needsUpdate = true;
+        appleOpacityVariable = o.material.opacity;
+      }
+    } );
+    
+    ++appleOpacityCounter;
+  }
+  else if(appleOpacityCounter >= 0)
+  {
+    appleModel.traverse ( (o) => { //Decrease opacity
+      if(o.isMesh)
+      {
+        o.material.opacity -= 0.025;
+        o.material.needsUpdate = true;
+        appleOpacityVariable = o.material.opacity;
+      }
+    } );
+    
+    ++appleOpacityCounter;
+    if(appleOpacityCounter == 40) appleOpacityCounter = -40;
+  }
+}
+
+let lemonOpacityCounter = -50;
+function lemonOpacityAnimation() //Opacity function in which the imported object opacity can be changed
+{
+
+  if(lemonOpacityCounter < 0)
+  {
+    lemonModel.scene.traverse ( (o) => { //Increase opacity
+      if(o.isMesh)
+      {
+        o.material.opacity += 0.02;
+        o.material.needsUpdate = true;
+        lemonOpacityVariable = o.material.opacity;
+      }
+    } );
+    
+    ++lemonOpacityCounter;
+  }
+  else if(appleOpacityCounter >= 0)
+  {
+    lemonModel.scene.traverse ( (o) => { //Decrease opacity
+      if(o.isMesh)
+      {
+        o.material.opacity -= 0.02;
+        o.material.needsUpdate = true;
+        lemonOpacityVariable = o.material.opacity;
+      }
+    } );
+    
+    ++lemonOpacityCounter;
+    if(lemonOpacityCounter == 50) lemonOpacityCounter = -50;
   }
 }
 

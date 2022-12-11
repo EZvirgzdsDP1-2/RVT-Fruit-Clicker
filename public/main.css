@@ -3,6 +3,28 @@ body {
     margin: 0px;
 }
 
+.cssOverlay{
+    position: absolute;
+    
+}
+
+#valueWindow{
+    width: 100px;
+    border: 3px solid #533c26;
+    padding: 25px;
+    margin: 10px;
+    background-color: hsl(117, 69%, 82%);
+}
+
+#fruitCountText{
+    font-family: Arial, Helvetica, sans-serif;
+    left: 10%;
+}
+
+#appleCounter{
+    right: 13%;
+}
+
 #datguiContainer{
     position: absolute;
     right: 0%;
