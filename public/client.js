@@ -22,9 +22,6 @@ const gui = new GUI( {  resizable : false,
 
 getDatGuiContainer.appendChild(gui.domElement);
 
-//CSS resize fruit count window
-
-
 //RNG functions
 function getRandomNumberRange(min, max)
 {
@@ -110,9 +107,13 @@ sceneDirectionalLight.position.set(2,-2,2); //Need to play with this number more
 scene.add(sceneDirectionalLight); //Directional light added to scene so objects can be seen
 
 //Count variables. Important for the gameplay.
-let numberCount = 0;
+let fruitCount = 0;
+let addToFruitPerSecond = 1;
 
-document.getElementById('appleCounter').innerHTML = numberCount; //Updates HTML DOM with current apple count WILL UNCOMMENT
+let dollarCount = 0;
+
+document.getElementById('fruitCounter').innerHTML = 'Fruit count: ' + fruitCount; //Updates HTML DOM with current apple count WILL UNCOMMENT
+document.getElementById('dollarCounter').innerHTML = 'Money count: ' + dollarCount + '$'; //Updates HTML DOM with current apple count WILL UNCOMMENT
 
 //Texture loader initializations
 let appleTextures = await textureLoader.loadAsync('./resourcesObjects/appleLowerPoly/textures/Gradient_UV_003.png'); //Old one is 'apple' directory
@@ -180,6 +181,12 @@ let grassModel = await gltfLoader.loadAsync('./resourcesObjects/grass/sketch.glt
   console.error(error);
 } ); 
 
+//Functions for getting game values loaded.
+
+function getGameValues()
+{
+
+}
 
 //Tween Js functionality
 appleTreeModel.userData.isTweening = false; //Related to the animation the tree will do. Is true when animation is in progress and false when not
@@ -231,10 +238,9 @@ window.addEventListener('resize',
 //Decrease and increase cube size (later tree size)
 function clickAnimationTree()
 {
-  //console.log("Times clicked: " + ++numberCount);
-  ++numberCount;
+  fruitCount += addToFruitPerSecond;
 
-  document.getElementById('appleCounter').innerHTML = numberCount;  
+  document.getElementById('fruitCounter').innerHTML = 'Fruit count: ' + fruitCount;  
 
   calculateClicksPerMinute();
   console.log('Current clicks per minute: '+ clicksPerMinute);
@@ -524,7 +530,7 @@ function peachSpinSlow()
   peachModel.rotation.z += 0.01;
 }
 
-//Opacity animation functions for pear, lemon, apple and peach
+//Opacity animation functions for pear, lemon, apple and peach. Unused part of project.
 
 function pearOpacityAnimation() //Opacity function in which the imported object opacity can be changed
 {
@@ -661,6 +667,7 @@ cubeTree.addEventListener("click", (Event) =>{
   clickAnimationTree();
 
 });
+
 
 function init()
 {
