@@ -9,18 +9,18 @@ import { gsap } from 'gsap';
 import * as TWEEN from './TweenJsDist/tween.esm.js'; //Tween.js
 
 //GUI change text to different
-GUI.TEXT_OPEN = "Open fruit upgrade";
-GUI.TEXT_CLOSED = "Close fruit upgrade";
+//GUI.TEXT_OPEN = "Open fruit upgrade";
+//GUI.TEXT_CLOSED = "Close fruit upgrade";
 
-const getDatGuiContainer = document.getElementById("datguiContainer");
+//const getDatGuiContainer = document.getElementById("datguiContainer");
 
 //Init Dat.gui
-const gui = new GUI( {  resizable : false,
+/*const gui = new GUI( {  resizable : false,
                         autoplace: false,
                         hideable: false,
-                        width: 400  } );
+                        width: 400  } );*/
 
-getDatGuiContainer.appendChild(gui.domElement);
+//getDatGuiContainer.appendChild(gui.domElement);  //Debug mode menu. Enables DAT.GUI
 
 //RNG functions
 function getRandomNumberRange(min, max)
@@ -108,9 +108,16 @@ scene.add(sceneDirectionalLight); //Directional light added to scene so objects 
 
 //Count variables. Important for the gameplay.
 let fruitCount = 0;
-let addToFruitPerSecond = 1;
+let clickValue = 1;
+
+let farmerCount = 0;
+let farmerValue = 10;
+let farmerFruitPerSecond = 0;
 
 let dollarCount = 0;
+let dollarValueToFruit = 8;
+
+let fruitPerSecond = 0; //Must add more
 
 document.getElementById('fruitCounter').innerHTML = 'Fruit count: ' + fruitCount; //Updates HTML DOM with current apple count WILL UNCOMMENT
 document.getElementById('dollarCounter').innerHTML = 'Money count: ' + dollarCount + '$'; //Updates HTML DOM with current apple count WILL UNCOMMENT
@@ -181,12 +188,131 @@ let grassModel = await gltfLoader.loadAsync('./resourcesObjects/grass/sketch.glt
   console.error(error);
 } ); 
 
+//Update HTML DOM to update the values
+function reloadAll()
+{
+  document.getElementById('fruitCounter').innerHTML = 'Fruit count: ' + fruitCount;
+  document.getElementById('dollarCounter').innerHTML = 'Money count: ' + dollarCount + '$';
+  document.getElementById('buyFarmer').innerHTML = 'Buy Farmers: ' + farmerValue + '$'; 
+  document.getElementById('fruitPerSecond').innerHTML = 'Current fruit per second: '+ farmerFruitPerSecond +' fruit/sec';
+  document.getElementById('farmerCount').innerHTML = 'Farmer Count: ' + farmerCount+ ', '+ farmerFruitPerSecond +' Fruit/Sec';
+} 
+
 //Functions for getting game values loaded.
 
 function getGameValues()
 {
+  let tempObject = JSON.parse(localStorage.getItem('GameData'));
+  
+  fruitCount = parseInt(tempObject["FruitCount"]); //Fix this thing.
+  dollarCount = parseInt(tempObject["DollarCount"]);
+  clickValue = parseInt(tempObject["ClickValue"]);
+  farmerCount = parseInt(tempObject["FarmerCount"]);
+  farmerValue = parseInt(tempObject["FarmerCount"]);;
+  farmerFruitPerSecond = parseInt(tempObject["FarmerCount"]);;
+  dollarValueToFruit = parseInt(tempObject["FarmerCount"]);;
+  fruitPerSecond = parseInt(tempObject["FarmerCount"]);
 
+  reloadAll();
 }
+
+//Event listeners for drawing side menu
+document.getElementById('openMenuButton').addEventListener('click', (event) =>{ //Open the side menu
+  
+  document.getElementById("sideMenu").style.width = "30%";
+  document.body.style.backgroundColor = "rgba(0,0,0,0.4)";
+
+});
+
+document.getElementById('closeMenuButton').addEventListener('click', (event) =>{ //Close the side menu
+  
+  document.getElementById("sideMenu").style.width = "0";
+  document.body.style.backgroundColor = "white";
+
+});
+
+document.getElementById('saveGameData').addEventListener('click', (event) =>{ //Save the game data
+
+  let gameDataObject = {'FruitCount': fruitCount, 'ClickValue': clickValue, 'DollarCount': dollarCount, 'FarmerCount': farmerCount, 'FarmerValue': farmerValue,
+   'FarmerPerSecond': farmerFruitPerSecond, 'FruitPerSecond': fruitPerSecond, 'DollarFruitValue':dollarValueToFruit};
+
+  localStorage.setItem('GameData', JSON.stringify(gameDataObject) );
+
+  confirm('Game data has been saved.')
+});
+
+document.getElementById('resetGameData').addEventListener('click', (event) =>{ //Save game data
+
+  if(confirm('Are you sure you want to reset the game data? This is unreverseable.'))
+  {
+    /*fruitCount = 0;
+    clickValue = 1;
+    farmerCount = 0;
+    farmerValue = 0
+    farmerFruitPerSecond = 0;
+    dollarCount = 0;
+    dollarValueToFruit = 0;
+    fruitPerSecond = 0;
+
+    let gameDataObject = {'FruitCount': fruitCount, 'ClickValue': clickValue, 'DollarCount': dollarCount};*/
+
+    localStorage.removeItem('GameData');
+
+    alert('Game data has been reset')
+    location.reload();
+  }
+});
+
+//Game button event listeners
+document.getElementById('fruitToDollars').addEventListener('click', (event) =>{
+
+  let tempDollarCount = Math.floor(fruitCount / dollarValueToFruit);
+
+  dollarCount += tempDollarCount; 
+
+  fruitCount -= parseInt( tempDollarCount * dollarValueToFruit );
+
+  document.getElementById('fruitCounter').innerHTML = 'Fruit count: ' + fruitCount;
+  document.getElementById('dollarCounter').innerHTML = 'Money count: ' + dollarCount + '$';
+
+});
+
+document.getElementById('buyFarmer').addEventListener('click', (event) =>{
+  
+  if(dollarCount >= farmerValue)
+  {
+    let tempFarmerCount = parseInt( Math.floor(dollarCount / farmerValue) );
+
+    farmerCount += tempFarmerCount; 
+
+    dollarCount -= tempFarmerCount * farmerValue;
+
+    farmerValue = Math.ceil( farmerValue + (farmerCount * 2.5) );
+
+    farmerFruitPerSecond = 2 * parseInt(farmerCount);
+
+    console.log('Dollar count is '+ dollarCount);
+
+    document.getElementById('buyFarmer').innerHTML = 'Buy Farmers: ' + farmerValue + '$'; 
+    document.getElementById('fruitPerSecond').innerHTML = 'Current fruit per second: '+ farmerFruitPerSecond +' fruit/sec';
+    document.getElementById('farmerCount').innerHTML = 'Farmer Count: ' + farmerCount+ ', '+ farmerFruitPerSecond +' Fruit/Sec';
+    document.getElementById('dollarCounter').innerHTML = 'Money count: ' + dollarCount + '$';
+    
+  }
+});
+
+//Automatic fruit incrementer
+function addFruitPerSecond() //Uncomplete method
+{
+  fruitPerSecond = farmerFruitPerSecond; //Will add more obejts that fruit per second;
+
+  fruitCount += fruitPerSecond;
+
+  document.getElementById('fruitCounter').innerHTML = 'Fruit count: ' + fruitCount;
+  document.getElementById('fruitPerSecond').innerHTML = 'Current fruit per second: '+ farmerFruitPerSecond +' fruit/sec';
+}
+
+setInterval(addFruitPerSecond, 1000);
 
 //Tween Js functionality
 appleTreeModel.userData.isTweening = false; //Related to the animation the tree will do. Is true when animation is in progress and false when not
@@ -203,13 +329,14 @@ const gsapApple = gsap.timeline();
 const gsapPeach = gsap.timeline();
 const gsapLemon= gsap.timeline();
 
-//Add funtion to GUI interface
-const addFuntionToButton = {
+
+//Add funtion to GUI interface  NO NEED FOR DATGUI
+/*const addFuntionToButton = {
   addNumber: function()
   {
     console.log('The number generated: ' + getRandomNumberRange(0,0.5).toFixed(2));
   }
-};
+};*/
 
 //Set camera position
 camera.position.z = 5;
@@ -238,7 +365,7 @@ window.addEventListener('resize',
 //Decrease and increase cube size (later tree size)
 function clickAnimationTree()
 {
-  fruitCount += addToFruitPerSecond;
+  fruitCount += clickValue;
 
   document.getElementById('fruitCounter').innerHTML = 'Fruit count: ' + fruitCount;  
 
@@ -276,13 +403,13 @@ function clickAnimationTree()
 
 
 //Dat.gui function
-function addGUI()
+/*function addGUI()
 {
   //gui.add(cubeTree.scale, 'x', 0, 3).name("Scale x axis"); //first experiment
   gui.add(addFuntionToButton, 'addNumber');
   gui.add(cubeTree.material, 'opacity', 0, 1).name("Scale opacity"); //first experiment
   gui.add(pearModel.position, 'y', 0, 3).name("y coordinates");
-}
+}*/
 
 
 //Add test cube to scene, later to be replaced by in-game objects
@@ -413,8 +540,8 @@ function animate()
 
 function moveSlowlyPear()
 {
-  let xCoordinates = getRandomNumberRange(0, 0.3).toFixed(2);
-  let zCoordinates = getRandomNumberRange(0, 0.4).toFixed(2);
+  let xCoordinates = getRandomNumberRange(-0.3, 0.3).toFixed(2);
+  let zCoordinates = getRandomNumberRange(-0.4, 0.4).toFixed(2);
 
   switch(gsapPear.isActive())
   {
@@ -436,8 +563,8 @@ function moveSlowlyPear()
 
 function moveSlowlyApple()
 {
-  let xCoordinates = getRandomNumberRange(0, 0.3).toFixed(3);
-  let zCoordinates = getRandomNumberRange(0, 0.4).toFixed(2);
+  let xCoordinates = getRandomNumberRange(-0.3, 0.3).toFixed(3);
+  let zCoordinates = getRandomNumberRange(-0.4, 0.4).toFixed(2);
 
   switch(gsapApple.isActive())
   {
@@ -458,8 +585,8 @@ function moveSlowlyApple()
 
 function moveSlowlyLemon()
 {
-  let xCoordinates = getRandomNumberRange(0, 0.4).toFixed(2);
-  let zCoordinates = getRandomNumberRange(0, 0.3).toFixed(3);
+  let xCoordinates = getRandomNumberRange(-0.4, 0.4).toFixed(2);
+  let zCoordinates = getRandomNumberRange(-0.3, 0.3).toFixed(3);
 
   switch(gsapLemon.isActive())
   {
@@ -480,8 +607,8 @@ function moveSlowlyLemon()
 
 function moveSlowlyPeach()
 {
-  let xCoordinates = getRandomNumberRange(0, 0.4).toFixed(3);
-  let zCoordinates = getRandomNumberRange(0, 0.4).toFixed(3);
+  let xCoordinates = getRandomNumberRange(-0.4, 0.4).toFixed(3);
+  let zCoordinates = getRandomNumberRange(-0.4, 0.4).toFixed(3);
 
   switch(gsapPeach.isActive())
   {
@@ -544,8 +671,6 @@ function pearOpacityAnimation() //Opacity function in which the imported object 
         pearOpacityVariable = o.material.opacity;
       }
     } );
-    
-    //console.log('Did i get here?: '+pearOpacityVariable);
 
     if(pearOpacityVariable.toFixed(2) <= 0.00) //pearOpacityCounter = -100;
     {
@@ -673,8 +798,10 @@ function init()
 {
   scene.background = new THREE.Color(0xD9D9D9);
   
+  if(localStorage.getItem('GameData') != null) getGameValues();
+
   addTree();
-  addGUI();
+  //addGUI(); //Debug menu
   animate();
 }
 

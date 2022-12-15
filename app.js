@@ -17,14 +17,12 @@ app.use('/threeInteractive/', express.static(path.join(__dirname, 'node_modules/
 //Tween.js
 app.use('/tweenJsDist/', express.static(path.join(__dirname, 'node_modules/@tweenjs/tween.js/dist')));
 
-//Shifty aka TweenJs with async
-//app.use('/shiftyTweenDist/', express.static(path.join(__dirname, 'node_modules/shifty/dist')));
-
 //GSAP animation library
 app.use('/gsapDirect/', express.static(path.join(__dirname, '/node_modules/gsap')));
 
 //Objects
 app.use('/resourcesObjects/', express.static(path.join(__dirname, 'resources/objects')));
+app.use('/resourcesImages/', express.static(path.join(__dirname, 'resources/images')));
 
 app.listen(3000, () => {
 

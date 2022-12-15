@@ -24,10 +24,55 @@
 <body> 
    <div id="fruitCounter"></div>    
     <div id="dollarCounter"></div> 
-    
-    <div id="sideMenu"></div>
 
+    <h2 id="fruitPerSecond">Current fruit per second: 0 fruit/sec</h2>
+
+    <div id="sideMenu">
+        <span style="cursor:pointer" id="closeMenuButton" alt="close menu">&times;</span>
+        
+        <div class="rowMenu"> <!-- Get dollars with fruit -->
+            <div class="item">
+                <img src="./images/transparentDollar.png" style="height: 100%; width: 88%;">
+            </div>
+            <div class="item">
+                <button id="fruitToDollars">Trade fruits to money</button>
+            </div>
+            <div class="item" >
+                <div class="sideMenuText">Current fruit to money ratio: 8 fruit to 1 $</div>
+            </div>
+        </div>
+        
+        <div class="rowMenu"> <!-- Get cursor upgrade -->
+            <div class="item">
+                <img src="./images/transparentCursor.png" style="height: 100%; width: 88%;">
+            </div>
+            <div class="item">
+                <button id="buyUpgradeCursor">Buy cursor upgrade 2$</button>
+            </div>
+            <div class="item" >
+                <div class="sideMenuText" id="cursorText">Current cursor count: 0, 0 fruit/click</div>
+            </div>
+        </div>
+        
+        <div class="rowMenu"><!-- Buy farmer upgrade -->
+            <div class="item">
+                <img src="./images/transparentHat.png" style="height: 100%; width: 88%;">
+            </div>
+            <div class="item">
+                <button id="buyFarmer">Buy Farmers: 10$</button>
+            </div> 
+            <div class="item" >
+                <div class="sideMenuText" id="farmerCount">Farmer Count: 0, 0 fruit/Sec</div>
+            </div>
+        </div>
+        
+    </div>
     <div id="datguiContainer"></div>
+
+    <span style="font-size:50px;cursor:pointer" id="openMenuButton">&#9776;</span>
+
+    <button id="saveGameData">Save game</button>
+    <button id="resetGameData">Reset game</button>
     <script type="module" src="client.js" async></script>
 </body>
 </html>
