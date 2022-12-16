@@ -109,6 +109,8 @@ scene.add(sceneDirectionalLight); //Directional light added to scene so objects 
 //Count variables. Important for the gameplay.
 let fruitCount = 0;
 let clickValue = 1;
+let clickDollarValue = 2;
+let clickUpgradeCount = 0;
 
 let farmerCount = 0;
 let farmerValue = 10;
@@ -196,6 +198,8 @@ function reloadAll()
   document.getElementById('buyFarmer').innerHTML = 'Buy Farmers: ' + farmerValue + '$'; 
   document.getElementById('fruitPerSecond').innerHTML = 'Current fruit per second: '+ farmerFruitPerSecond +' fruit/sec';
   document.getElementById('farmerCount').innerHTML = 'Farmer Count: ' + farmerCount+ ', '+ farmerFruitPerSecond +' Fruit/Sec';
+  document.getElementById('buyUpgradeCursor').innerHTML = 'Buy cursor upgrade '+ clickValue +'$';
+    document.getElementById('cursorText').innerHTML = 'Current cursor count: '+ clickUpgradeCount +', '+  clickValue +'fruit/click';
 } 
 
 //Functions for getting game values loaded.
@@ -212,6 +216,8 @@ function getGameValues()
   farmerFruitPerSecond = parseInt(tempObject["FarmerCount"]);;
   dollarValueToFruit = parseInt(tempObject["FarmerCount"]);;
   fruitPerSecond = parseInt(tempObject["FarmerCount"]);
+  clickDollarValue = parseInt(tempObject["ClickDollarValue"]);
+  clickUpgradeCount = parseInt(tempObject["ClickUpgradeCount"]);
 
   reloadAll();
 }
@@ -233,8 +239,8 @@ document.getElementById('closeMenuButton').addEventListener('click', (event) =>{
 
 document.getElementById('saveGameData').addEventListener('click', (event) =>{ //Save the game data
 
-  let gameDataObject = {'FruitCount': fruitCount, 'ClickValue': clickValue, 'DollarCount': dollarCount, 'FarmerCount': farmerCount, 'FarmerValue': farmerValue,
-   'FarmerPerSecond': farmerFruitPerSecond, 'FruitPerSecond': fruitPerSecond, 'DollarFruitValue':dollarValueToFruit};
+  let gameDataObject = {'FruitCount': fruitCount, 'ClickValue': clickValue, 'ClickDollarValue': clickDollarValue, 'ClickUpgradeCount': clickUpgradeCount, 'DollarCount': dollarCount, 'FarmerCount': farmerCount, 
+  'FarmerValue': farmerValue, 'FarmerPerSecond': farmerFruitPerSecond, 'FruitPerSecond': fruitPerSecond, 'DollarFruitValue':dollarValueToFruit};
 
   localStorage.setItem('GameData', JSON.stringify(gameDataObject) );
 
@@ -245,16 +251,6 @@ document.getElementById('resetGameData').addEventListener('click', (event) =>{ /
 
   if(confirm('Are you sure you want to reset the game data? This is unreverseable.'))
   {
-    /*fruitCount = 0;
-    clickValue = 1;
-    farmerCount = 0;
-    farmerValue = 0
-    farmerFruitPerSecond = 0;
-    dollarCount = 0;
-    dollarValueToFruit = 0;
-    fruitPerSecond = 0;
-
-    let gameDataObject = {'FruitCount': fruitCount, 'ClickValue': clickValue, 'DollarCount': dollarCount};*/
 
     localStorage.removeItem('GameData');
 
@@ -277,6 +273,28 @@ document.getElementById('fruitToDollars').addEventListener('click', (event) =>{
 
 });
 
+document.getElementById('buyUpgradeCursor').addEventListener('click', (event) =>{
+
+  if(dollarCount >= clickDollarValue)
+  {
+    let tempClickerCount = parseInt( Math.floor(dollarCount / clickDollarValue) );
+
+    clickUpgradeCount += tempClickerCount;
+
+    dollarCount -= tempClickerCount * clickDollarValue;
+
+    clickValue = 2 * clickUpgradeCount;
+
+    clickDollarValue = Math.ceil( clickDollarValue + (farmerCount * 2.5) );
+    
+    document.getElementById('buyUpgradeCursor').innerHTML = 'Buy cursor upgrade '+ clickDollarValue +'$';
+    document.getElementById('cursorText').innerHTML = 'Current cursor count: '+ clickUpgradeCount +', '+  clickValue +'fruit/click';
+    document.getElementById('dollarCounter').innerHTML = 'Money count: ' + dollarCount + '$';
+
+  }
+
+});
+
 document.getElementById('buyFarmer').addEventListener('click', (event) =>{
   
   if(dollarCount >= farmerValue)
@@ -290,8 +308,6 @@ document.getElementById('buyFarmer').addEventListener('click', (event) =>{
     farmerValue = Math.ceil( farmerValue + (farmerCount * 2.5) );
 
     farmerFruitPerSecond = 2 * parseInt(farmerCount);
-
-    console.log('Dollar count is '+ dollarCount);
 
     document.getElementById('buyFarmer').innerHTML = 'Buy Farmers: ' + farmerValue + '$'; 
     document.getElementById('fruitPerSecond').innerHTML = 'Current fruit per second: '+ farmerFruitPerSecond +' fruit/sec';
