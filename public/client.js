@@ -8,19 +8,10 @@ import { InteractionManager } from './threeInteractive/three.interactive.js';//t
 import { gsap } from 'gsap';
 import * as TWEEN from './TweenJsDist/tween.esm.js'; //Tween.js
 
-//GUI change text to different
-//GUI.TEXT_OPEN = "Open fruit upgrade";
-//GUI.TEXT_CLOSED = "Close fruit upgrade";
-
-//const getDatGuiContainer = document.getElementById("datguiContainer");
-
-//Init Dat.gui
-/*const gui = new GUI( {  resizable : false,
-                        autoplace: false,
-                        hideable: false,
-                        width: 400  } );*/
-
-//getDatGuiContainer.appendChild(gui.domElement);  //Debug mode menu. Enables DAT.GUI
+//Adds commas to big numbers
+function addcomma(x) {
+  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+}
 
 //RNG functions
 function getRandomNumberRange(min, max)
@@ -28,13 +19,13 @@ function getRandomNumberRange(min, max)
   return Math.random() * (max - min) + min;
 }
 
-//Clicks per minute calculate function 
+//Clicks per minute calculate function. DEPRICATED 
 let clicksPerMinute = 0;
 
 let click = 0;
 let clicks = 0;
 
-function calculateClicksPerMinute() {
+function calculateClicksPerMinute() { //Was meant for dynamic animations and opacity change. DEPRICATED
     let seconds = new Date().getTime();
 
     clicks = ((1 / ((seconds - click) / 1000)) * 60);
@@ -42,7 +33,7 @@ function calculateClicksPerMinute() {
     clicksPerMinute = Math.floor(clicks);
 };
 
-let dynamicFruitCooldown = (clicksPerMinute ** -2) * (10 ** 5); //This may be only temporary, because GSAP doesn't support dynamic animation number update
+let dynamicFruitCooldown = (clicksPerMinute ** -2) * (10 ** 5); //This may be only temporary, because GSAP doesn't support dynamic animation number update. DEPRICATED
 
 //Geometry and mesh for cube to be clicked on
 const cubeGeometry = new THREE.BoxGeometry();
@@ -107,19 +98,37 @@ sceneDirectionalLight.position.set(2,-2,2); //Need to play with this number more
 scene.add(sceneDirectionalLight); //Directional light added to scene so objects can be seen
 
 //Count variables. Important for the gameplay.
-let fruitCount = 0;
-let clickValue = 1;
-let clickDollarValue = 2;
-let clickUpgradeCount = 0;
+let fruitCount = 0; //Saved in GameDataOne
+let clickValue = 1; //Saved in GameDataOne
+let clickDollarValue = 2; //Saved in GameDataOne
+let clickUpgradeCount = 0; //Saved in GameDataOne
+let dollarCount = 0; //Saved in GameDataOne
 
-let farmerCount = 0;
-let farmerValue = 10;
-let farmerFruitPerSecond = 0;
+let farmerCount = 0; //Saved in GameDataTwo
+let farmerValue = 10; //Saved in GameDataTwo
+let farmerFruitPerSecond = 0; //Saved in GameDataTwo
+let dollarValueToFruit = 8; //Saved in GameDataTwo
+let fruitPerSecond = 0; //Saved in GameDataTwo
 
-let dollarCount = 0;
-let dollarValueToFruit = 8;
+let fruitDolllarConversionUpgradeCount = 0; //Saved in GameDataThree
+let fruitDolllarConversionUpgradeDollarValue = 10000; //Saved in GameDataThree
 
-let fruitPerSecond = 0; //Must add more
+let droneUpgradeCount = 0; //Saved in GameDataThree
+let droneFruitPerSecond = 0; //Saved in GameDataThree
+let droneUpgradeValue = 150; //Saved in GameDataThree
+
+let robotUpgradeDollarPrice = 1200; //Saved in GameDataFour
+let robotFruitPerSecond = 0; //Saved in GameDataFour
+let robotDollarUpgradeCount = 0; //Saved in GameDataFour
+
+let artificialHumanUpgradePrice = 10000; //Saved in GameDataFive
+let artificialHumanFruitPerSecond = 0; //Saved in GameDataFive
+let artificialHumanUpgradeCount = 0; //Saved in GameDataFive
+
+let fruitSummonerUpgradePrice = 50000; //Saved in GameDataSix
+let fruitSummonerFruitPerSecond = 0; //Saved in GameDataSix
+let fruitSummonerUpgradeCount = 0; //Saved in GameDataSix
+
 
 document.getElementById('fruitCounter').innerHTML = 'Fruit count: ' + fruitCount; //Updates HTML DOM with current apple count WILL UNCOMMENT
 document.getElementById('dollarCounter').innerHTML = 'Money count: ' + dollarCount + '$'; //Updates HTML DOM with current apple count WILL UNCOMMENT
@@ -193,33 +202,75 @@ let grassModel = await gltfLoader.loadAsync('./resourcesObjects/grass/sketch.glt
 //Update HTML DOM to update the values
 function reloadAll()
 {
-  document.getElementById('fruitCounter').innerHTML = 'Fruit count: ' + fruitCount;
-  document.getElementById('dollarCounter').innerHTML = 'Money count: ' + dollarCount + '$';
-  document.getElementById('buyFarmer').innerHTML = 'Buy Farmers: ' + farmerValue + '$'; 
-  document.getElementById('fruitPerSecond').innerHTML = 'Current fruit per second: '+ farmerFruitPerSecond +' fruit/sec';
-  document.getElementById('farmerCount').innerHTML = 'Farmer Count: ' + farmerCount+ ', '+ farmerFruitPerSecond +' Fruit/Sec';
-  document.getElementById('buyUpgradeCursor').innerHTML = 'Buy cursor upgrade '+ clickValue +'$';
-    document.getElementById('cursorText').innerHTML = 'Current cursor count: '+ clickUpgradeCount +', '+  clickValue +'fruit/click';
+  document.getElementById('fruitCounter').innerHTML = 'Fruit count: ' + addcomma(fruitCount);
+  document.getElementById('dollarCounter').innerHTML = 'Money count: ' + addcomma(dollarCount) + '$';
+  document.getElementById('buyFarmer').innerHTML = 'Buy Farmers: ' + addcomma(farmerValue) + '$'; 
+  document.getElementById('fruitPerSecond').innerHTML = 'Current fruit per second: '+ addcomma(fruitPerSecond) +' fruit/sec';
+  document.getElementById('farmerCount').innerHTML = 'Farmer Count: ' + addcomma(farmerCount) + ', '+ addcomma(farmerFruitPerSecond) +' Fruit/Sec';
+  document.getElementById('buyUpgradeCursor').innerHTML = 'Buy cursor upgrade '+ addcomma(clickDollarValue) +'$';
+  document.getElementById('cursorText').innerHTML = 'Current cursor count: '+ addcomma(clickUpgradeCount) +', '+  addcomma(clickValue) +'fruit/click';
+  
+  if( fruitDolllarConversionUpgradeCount < 7 )
+  { document.getElementById('fruitConversionUpgradeButton').innerHTML = 'Upgrade fruit dollar conversion: '+ addcomma(fruitDolllarConversionUpgradeDollarValue) +'$'; }
+  else{ document.getElementById('fruitConversionUpgradeButton').innerHTML = 'You can\'t get the fruit to dollar conversion upgrade anymore! Max reached'; }
+  
+  document.getElementById('fruitToDollarUpgradeText').innerHTML = 'Current upgrade level: '+ fruitDolllarConversionUpgradeCount;
+  document.getElementById('fruitToDollarConversionText').innerHTML = 'Current fruit to money ratio: '+ dollarValueToFruit +' fruit to 1 $';
+  document.getElementById('buyDrone').innerHTML = 'Buy Drone: '+ addcomma(droneUpgradeValue) +'$';
+  document.getElementById('droneCount').innerHTML = 'Drone Count: '+ addcomma(droneUpgradeCount) +', '+ addcomma(droneFruitPerSecond) +' fruit/Sec';
+
+  document.getElementById('buyRobotButton').innerHTML = 'Buy Robot: '+ addcomma(robotUpgradeDollarPrice) +'$';
+  document.getElementById('robotCountText').innerHTML = 'Robot Count: '+ addcomma(robotDollarUpgradeCount) +', '+ addcomma(robotFruitPerSecond) +' fruit/Sec';
+
+  document.getElementById('buyArtificialHumanButton').innerHTML = 'Buy artificial human: '+ addcomma(artificialHumanUpgradePrice) +'$';
+  document.getElementById('artificialHumanCountText').innerHTML = 'Artificial human Count: '+ addcomma(artificialHumanUpgradeCount) +', '+ addcomma(artificialHumanFruitPerSecond) +' fruit/Sec';
+
+  document.getElementById('buyFruitSummoningButton').innerHTML = 'Buy fruit summoner: '+ addcomma(fruitSummonerUpgradePrice) +'$';
+  document.getElementById('fruitSummonerCountText').innerHTML = 'Fruit summoner count: '+ addcomma(fruitSummonerUpgradeCount) +', '+ addcomma(fruitSummonerFruitPerSecond) +' fruit/Sec';
 } 
 
 //Functions for getting game values loaded.
 
 function getGameValues()
 {
-  let tempObject = JSON.parse(localStorage.getItem('GameData'));
+  let tempObjectOne = JSON.parse(localStorage.getItem('GameDataOne'));
+  let tempObjectTwo = JSON.parse(localStorage.getItem('GameDataTwo'));
+  let tempObjectThree = JSON.parse(localStorage.getItem('GameDataThree'));
+  let tempObjectFour = JSON.parse(localStorage.getItem('GameDataFour'));
+  let tempObjectFive = JSON.parse(localStorage.getItem('GameDataFive'));
+  let tempObjectSix = JSON.parse(localStorage.getItem('GameDataSix'));
   
-  fruitCount = parseInt(tempObject["FruitCount"]); //Fix this thing.
-  dollarCount = parseInt(tempObject["DollarCount"]);
-  clickValue = parseInt(tempObject["ClickValue"]);
-  farmerCount = parseInt(tempObject["FarmerCount"]);
-  farmerValue = parseInt(tempObject["FarmerCount"]);;
-  farmerFruitPerSecond = parseInt(tempObject["FarmerCount"]);;
-  dollarValueToFruit = parseInt(tempObject["FarmerCount"]);;
-  fruitPerSecond = parseInt(tempObject["FarmerCount"]);
-  clickDollarValue = parseInt(tempObject["ClickDollarValue"]);
-  clickUpgradeCount = parseInt(tempObject["ClickUpgradeCount"]);
+  fruitCount = parseInt(tempObjectOne["FruitCount"]); 
+  dollarCount = parseInt(tempObjectOne["DollarCount"]);
+  clickValue = parseInt(tempObjectOne["ClickValue"]);
+  clickDollarValue = parseInt(tempObjectOne["ClickDollarValue"]);
+  clickUpgradeCount = parseInt(tempObjectOne["ClickUpgradeCount"]);
 
-  reloadAll();
+  farmerFruitPerSecond = parseInt(tempObjectTwo["FarmerPerSecond"]);
+  dollarValueToFruit = parseInt(tempObjectTwo["DollarFruitValue"]);
+  fruitPerSecond = parseInt(tempObjectTwo["FruitPerSecond"]);
+  farmerCount = parseInt(tempObjectTwo["FarmerCount"]);
+  farmerValue = parseInt(tempObjectTwo["FarmerValue"]);
+
+  fruitDolllarConversionUpgradeCount = parseInt(tempObjectThree["fruitDolllarConversionUpgradeCount"]);
+  fruitDolllarConversionUpgradeDollarValue = parseInt(tempObjectThree["fruitDolllarConversionUpgradeDollarValue"]);
+  droneUpgradeCount = parseInt(tempObjectThree["droneUpgradeCount"]);
+  droneFruitPerSecond = parseInt(tempObjectThree["droneFruitPerSecond"]);
+  droneUpgradeValue = parseInt(tempObjectThree["droneUpgradeValue"]);
+
+  robotDollarUpgradeCount = parseInt(tempObjectFour["RobotUpgradeCount"]);
+  robotFruitPerSecond = parseInt(tempObjectFour["RobotFruitPerSecond"]);
+  robotUpgradeDollarPrice = parseInt(tempObjectFour["RobotUpgradeDollarPrice"]);
+
+  artificialHumanFruitPerSecond = parseInt(tempObjectFive["ArtificialHumanFruitPerSecond"]);
+  artificialHumanUpgradeCount = parseInt(tempObjectFive["ArtificialHumanUpgradeCount"]);
+  artificialHumanUpgradePrice = parseInt(tempObjectFive["ArtificialHumanUpgradePrice"]);
+
+  fruitSummonerFruitPerSecond = parseInt(tempObjectSix["FruitSummonerFruitPerSecond"]);
+  fruitSummonerUpgradeCount = parseInt(tempObjectSix["FruitSummonerUpgradeCount"]);
+  fruitSummonerUpgradePrice = parseInt(tempObjectSix["FruitSummonerUpgradePrice"]);
+
+  reloadAll(); //Reloads HTML DOM
 }
 
 //Event listeners for drawing side menu
@@ -239,10 +290,24 @@ document.getElementById('closeMenuButton').addEventListener('click', (event) =>{
 
 document.getElementById('saveGameData').addEventListener('click', (event) =>{ //Save the game data
 
-  let gameDataObject = {'FruitCount': fruitCount, 'ClickValue': clickValue, 'ClickDollarValue': clickDollarValue, 'ClickUpgradeCount': clickUpgradeCount, 'DollarCount': dollarCount, 'FarmerCount': farmerCount, 
-  'FarmerValue': farmerValue, 'FarmerPerSecond': farmerFruitPerSecond, 'FruitPerSecond': fruitPerSecond, 'DollarFruitValue':dollarValueToFruit};
+  //let gameDataObject = {'FruitCount': fruitCount, 'ClickValue': clickValue, 'ClickDollarValue': clickDollarValue, 'ClickUpgradeCount': clickUpgradeCount, 'DollarCount': dollarCount, 
+  //'FarmerCount': farmerCount, 
+  //'FarmerValue': farmerValue, 'FarmerPerSecond': farmerFruitPerSecond, 'FruitPerSecond': fruitPerSecond, 'DollarFruitValue':dollarValueToFruit};
 
-  localStorage.setItem('GameData', JSON.stringify(gameDataObject) );
+  let gameDataObjectOne = {'FruitCount': fruitCount, 'ClickValue': clickValue, 'ClickDollarValue': clickDollarValue, 'ClickUpgradeCount': clickUpgradeCount, 'DollarCount': dollarCount};
+  let gameDataObjectTwo = {'FarmerCount': farmerCount, 'FarmerValue': farmerValue, 'FarmerPerSecond': farmerFruitPerSecond, 'FruitPerSecond': fruitPerSecond, 'DollarFruitValue':dollarValueToFruit};
+  let gameDataObjectThree = {'fruitDolllarConversionUpgradeCount': fruitDolllarConversionUpgradeCount, 'fruitDolllarConversionUpgradeDollarValue': fruitDolllarConversionUpgradeDollarValue,
+    'droneUpgradeCount':droneUpgradeCount, 'droneFruitPerSecond':droneFruitPerSecond, 'droneUpgradeValue':droneUpgradeValue};
+  let gameDataObjectFour = {'RobotUpgradeCount':robotDollarUpgradeCount, 'RobotFruitPerSecond':robotFruitPerSecond, 'RobotUpgradeDollarPrice': robotUpgradeDollarPrice};
+  let gameDataObjectFive = {'ArtificialHumanUpgradePrice':artificialHumanUpgradePrice, 'ArtificialHumanFruitPerSecond':artificialHumanFruitPerSecond, 'ArtificialHumanUpgradeCount':artificialHumanUpgradeCount};
+  let gameDataObjectSix = {'FruitSummonerFruitPerSecond':fruitSummonerFruitPerSecond, 'FruitSummonerUpgradeCount':fruitSummonerUpgradeCount, 'FruitSummonerUpgradePrice':fruitSummonerUpgradePrice};
+
+  localStorage.setItem('GameDataOne', JSON.stringify(gameDataObjectOne) ); //Save game data in local storage
+  localStorage.setItem('GameDataTwo', JSON.stringify(gameDataObjectTwo) );
+  localStorage.setItem('GameDataThree', JSON.stringify(gameDataObjectThree) );
+  localStorage.setItem('GameDataFour', JSON.stringify(gameDataObjectFour) );
+  localStorage.setItem('GameDataFive', JSON.stringify(gameDataObjectFive) );
+  localStorage.setItem('GameDataSix', JSON.stringify(gameDataObjectSix) );
 
   confirm('Game data has been saved.')
 });
@@ -252,7 +317,9 @@ document.getElementById('resetGameData').addEventListener('click', (event) =>{ /
   if(confirm('Are you sure you want to reset the game data? This is unreverseable.'))
   {
 
-    localStorage.removeItem('GameData');
+    localStorage.removeItem('GameDataOne')
+    localStorage.removeItem('GameDataTwo');
+    localStorage.removeItem('GameDataThree');
 
     alert('Game data has been reset')
     location.reload();
@@ -268,8 +335,8 @@ document.getElementById('fruitToDollars').addEventListener('click', (event) =>{
 
   fruitCount -= parseInt( tempDollarCount * dollarValueToFruit );
 
-  document.getElementById('fruitCounter').innerHTML = 'Fruit count: ' + fruitCount;
-  document.getElementById('dollarCounter').innerHTML = 'Money count: ' + dollarCount + '$';
+  document.getElementById('fruitCounter').innerHTML = 'Fruit count: ' + addcomma(fruitCount);
+  document.getElementById('dollarCounter').innerHTML = 'Money count: ' + addcomma(dollarCount) + '$';
 
 });
 
@@ -277,19 +344,19 @@ document.getElementById('buyUpgradeCursor').addEventListener('click', (event) =>
 
   if(dollarCount >= clickDollarValue)
   {
-    let tempClickerCount = parseInt( Math.floor(dollarCount / clickDollarValue) );
+    //let tempClickerCount = parseInt( Math.floor(dollarCount / clickDollarValue) );
 
-    clickUpgradeCount += tempClickerCount;
+    clickUpgradeCount += 1;
 
-    dollarCount -= tempClickerCount * clickDollarValue;
+    dollarCount -= 1 * clickDollarValue;
 
-    clickValue = 2 * clickUpgradeCount;
+    clickValue = (1 + Math.ceil(clickUpgradeCount / 0.9)) * clickUpgradeCount;
 
-    clickDollarValue = Math.ceil( clickDollarValue + (farmerCount * 2.5) );
+    clickDollarValue = Math.ceil( clickDollarValue + (clickUpgradeCount * 2.5) );
     
-    document.getElementById('buyUpgradeCursor').innerHTML = 'Buy cursor upgrade '+ clickDollarValue +'$';
-    document.getElementById('cursorText').innerHTML = 'Current cursor count: '+ clickUpgradeCount +', '+  clickValue +'fruit/click';
-    document.getElementById('dollarCounter').innerHTML = 'Money count: ' + dollarCount + '$';
+    document.getElementById('buyUpgradeCursor').innerHTML = 'Buy cursor upgrade '+ addcomma(clickDollarValue) +'$';
+    document.getElementById('cursorText').innerHTML = 'Current cursor count: '+ addcomma(clickUpgradeCount) +', '+  addcomma(clickValue) +'fruit/click';
+    document.getElementById('dollarCounter').innerHTML = 'Money count: ' + addcomma(dollarCount) + '$';
 
   }
 
@@ -299,33 +366,146 @@ document.getElementById('buyFarmer').addEventListener('click', (event) =>{
   
   if(dollarCount >= farmerValue)
   {
-    let tempFarmerCount = parseInt( Math.floor(dollarCount / farmerValue) );
+    //let tempFarmerCount = parseInt( Math.floor(dollarCount / farmerValue) );
 
-    farmerCount += tempFarmerCount; 
+    farmerCount += 1; 
 
-    dollarCount -= tempFarmerCount * farmerValue;
+    dollarCount -= 1 * farmerValue;
 
     farmerValue = Math.ceil( farmerValue + (farmerCount * 2.5) );
 
-    farmerFruitPerSecond = 2 * parseInt(farmerCount);
+    farmerFruitPerSecond = (3 + Math.ceil(farmerCount / 2)) * parseInt(farmerCount);
 
-    document.getElementById('buyFarmer').innerHTML = 'Buy Farmers: ' + farmerValue + '$'; 
-    document.getElementById('fruitPerSecond').innerHTML = 'Current fruit per second: '+ farmerFruitPerSecond +' fruit/sec';
-    document.getElementById('farmerCount').innerHTML = 'Farmer Count: ' + farmerCount+ ', '+ farmerFruitPerSecond +' Fruit/Sec';
-    document.getElementById('dollarCounter').innerHTML = 'Money count: ' + dollarCount + '$';
+    changeFruitPerSecond()
+
+    document.getElementById('buyFarmer').innerHTML = 'Buy Farmers: ' + addcomma(farmerValue) + '$'; 
+    document.getElementById('farmerCount').innerHTML = 'Farmer Count: ' + addcomma(farmerCount) + ', '+ addcomma(farmerFruitPerSecond) +' Fruit/Sec';
+    document.getElementById('dollarCounter').innerHTML = 'Money count: ' + addcomma(dollarCount) + '$';
     
   }
 });
 
+
+document.getElementById('fruitConversionUpgradeButton').addEventListener('click', (event) =>{
+  
+  if(dollarCount >= fruitDolllarConversionUpgradeDollarValue)
+  {
+    if(fruitDolllarConversionUpgradeCount != 7)
+    {
+      ++fruitDolllarConversionUpgradeCount;
+      --dollarValueToFruit;
+
+      dollarCount -= fruitDolllarConversionUpgradeDollarValue * 1;
+
+      fruitDolllarConversionUpgradeDollarValue = Math.ceil( fruitDolllarConversionUpgradeDollarValue + (fruitDolllarConversionUpgradeDollarValue * 9.5) );
+
+      document.getElementById('fruitConversionUpgradeButton').innerHTML = 'Upgrade fruit to dollar conversion '+ addcomma(fruitDolllarConversionUpgradeDollarValue) +'$';
+      document.getElementById('fruitToDollarUpgradeText').innerHTML = 'Current upgrade level: '+ fruitDolllarConversionUpgradeCount;
+      document.getElementById('fruitToDollarConversionText').innerHTML = 'Current fruit to money ratio: '+ dollarValueToFruit +' fruit to 1 $';
+      document.getElementById('dollarCounter').innerHTML = 'Money count: ' + addcomma(dollarCount) + '$';
+    }
+    else
+    {
+      document.getElementById('fruitConversionUpgradeButton').innerHTML = 'You can\'t get the fruit to dollar conversion upgrade anymore';
+    }
+    
+  }
+});
+
+document.getElementById('buyDrone').addEventListener('click', (event) =>{
+
+  if(dollarCount >= droneUpgradeValue)
+  {
+    ++droneUpgradeCount;
+
+    dollarCount -= droneUpgradeValue;
+
+    droneFruitPerSecond =  Math.ceil(15 + (droneUpgradeCount / 0.9)) * droneUpgradeCount;
+    droneUpgradeValue = Math.ceil( droneUpgradeValue + (droneUpgradeValue * 0.09) );
+
+    changeFruitPerSecond();
+
+    document.getElementById('buyDrone').innerHTML = 'Buy Drone: '+ addcomma(droneUpgradeValue) +'$';
+    document.getElementById('droneCount').innerHTML = 'Drone Count: '+ addcomma(droneUpgradeCount) +', '+ addcomma(droneFruitPerSecond) +' fruit/Sec';
+    document.getElementById('dollarCounter').innerHTML = 'Money count: ' + addcomma(dollarCount) + '$';
+  }
+});
+
+document.getElementById('buyRobotButton').addEventListener('click', (event) =>{ 
+  if(dollarCount >= robotUpgradeDollarPrice)
+  {
+    ++robotDollarUpgradeCount;
+
+    dollarCount -= robotUpgradeDollarPrice;
+
+    robotFruitPerSecond =  Math.ceil(90 + (robotDollarUpgradeCount / 0.94)) * robotDollarUpgradeCount;
+
+    robotUpgradeDollarPrice = Math.ceil( robotUpgradeDollarPrice + (robotUpgradeDollarPrice * 0.11) );
+
+    changeFruitPerSecond();
+
+    document.getElementById('buyRobotButton').innerHTML = 'Buy Robot: '+ addcomma(robotUpgradeDollarPrice) +'$';
+    document.getElementById('robotCountText').innerHTML = 'Robot Count: '+ addcomma(robotDollarUpgradeCount) +', '+ addcomma(robotFruitPerSecond) +' fruit/Sec';
+    document.getElementById('dollarCounter').innerHTML = 'Money count: ' + addcomma(dollarCount) + '$';
+  }
+});
+
+document.getElementById('buyArtificialHumanButton').addEventListener('click', (event) =>{ 
+  if(dollarCount >= artificialHumanUpgradePrice)
+  {
+    ++artificialHumanUpgradeCount;
+
+    dollarCount -= artificialHumanUpgradePrice;
+
+    artificialHumanFruitPerSecond =  Math.ceil(470 + (artificialHumanUpgradeCount / 0.96)) * artificialHumanUpgradeCount;
+
+    artificialHumanUpgradePrice = Math.ceil( artificialHumanUpgradePrice + (artificialHumanUpgradePrice * 0.13) );
+
+    changeFruitPerSecond();
+
+    document.getElementById('buyArtificialHumanButton').innerHTML = 'Buy artificial human: '+ addcomma(artificialHumanUpgradePrice) +'$';
+    document.getElementById('artificialHumanCountText').innerHTML = 'Artificial human Count: '+ addcomma(artificialHumanUpgradeCount) +', '+ addcomma(artificialHumanFruitPerSecond) +' fruit/Sec';
+    document.getElementById('dollarCounter').innerHTML = 'Money count: ' + addcomma(dollarCount) + '$';
+  }
+});
+
+
+document.getElementById('buyFruitSummoningButton').addEventListener('click', (event) =>{ 
+  if(dollarCount >= fruitSummonerUpgradePrice)
+  {
+    ++fruitSummonerUpgradeCount;
+
+    dollarCount -= fruitSummonerUpgradePrice;
+
+    fruitSummonerFruitPerSecond =  Math.ceil(890 + (fruitSummonerUpgradeCount / 0.98)) * fruitSummonerUpgradeCount;
+
+    fruitSummonerUpgradePrice = Math.ceil( fruitSummonerUpgradePrice + (fruitSummonerUpgradePrice * 0.15) );
+
+    changeFruitPerSecond();
+
+    document.getElementById('buyFruitSummoningButton').innerHTML = 'Buy fruit summoner: '+ addcomma(fruitSummonerUpgradePrice) +'$';
+    document.getElementById('fruitSummonerCountText').innerHTML = 'Fruit summoner count: '+ addcomma(fruitSummonerUpgradeCount) +', '+ addcomma(fruitSummonerFruitPerSecond) +' fruit/Sec';
+    document.getElementById('dollarCounter').innerHTML = 'Money count: ' + addcomma(dollarCount) + '$';
+  }
+});
+
+function changeFruitPerSecond()
+{
+  fruitPerSecond = farmerFruitPerSecond + droneFruitPerSecond + robotFruitPerSecond + artificialHumanFruitPerSecond + fruitSummonerFruitPerSecond; //Will add more objects that fruit per second;
+
+  document.getElementById('fruitPerSecond').innerHTML = 'Current fruit per second: '+ addcomma(fruitPerSecond) +' fruit/sec';
+}
+
+
 //Automatic fruit incrementer
 function addFruitPerSecond() //Uncomplete method
 {
-  fruitPerSecond = farmerFruitPerSecond; //Will add more obejts that fruit per second;
+  fruitPerSecond = farmerFruitPerSecond + droneFruitPerSecond + robotFruitPerSecond + artificialHumanFruitPerSecond + fruitSummonerFruitPerSecond; //Will add more objects that fruit per second;
 
   fruitCount += fruitPerSecond;
 
-  document.getElementById('fruitCounter').innerHTML = 'Fruit count: ' + fruitCount;
-  document.getElementById('fruitPerSecond').innerHTML = 'Current fruit per second: '+ farmerFruitPerSecond +' fruit/sec';
+  document.getElementById('fruitCounter').innerHTML = 'Fruit count: ' + addcomma(fruitCount);
+  document.getElementById('fruitPerSecond').innerHTML = 'Current fruit per second: '+ addcomma(fruitPerSecond) +' fruit/sec';
 }
 
 setInterval(addFruitPerSecond, 1000);
@@ -346,17 +526,10 @@ const gsapPeach = gsap.timeline();
 const gsapLemon= gsap.timeline();
 
 
-//Add funtion to GUI interface  NO NEED FOR DATGUI
-/*const addFuntionToButton = {
-  addNumber: function()
-  {
-    console.log('The number generated: ' + getRandomNumberRange(0,0.5).toFixed(2));
-  }
-};*/
-
 //Set camera position
-camera.position.z = 5;
+camera.position.z = 4.5;//5
 camera.position.y = 1;
+camera.position.x = -0.2;
 camera.rotation.x = -0.2;
 
 //Create renderer to render objects in the scene
@@ -383,10 +556,10 @@ function clickAnimationTree()
 {
   fruitCount += clickValue;
 
-  document.getElementById('fruitCounter').innerHTML = 'Fruit count: ' + fruitCount;  
+  document.getElementById('fruitCounter').innerHTML = 'Fruit count: ' + addcomma(fruitCount);  
 
-  calculateClicksPerMinute();
-  console.log('Current clicks per minute: '+ clicksPerMinute);
+  //calculateClicksPerMinute();
+  //console.log('Current clicks per minute: '+ clicksPerMinute); //Old part of code. Was meant for dynamic opacity and animation speed.
 
   moveSlowlyPear();//Temporary, will add more fruit
   moveSlowlyApple();
@@ -416,16 +589,6 @@ function clickAnimationTree()
   tweenDeflate.chain(tweenInflate);
   tweenDeflate.start();
 }
-
-
-//Dat.gui function
-/*function addGUI()
-{
-  //gui.add(cubeTree.scale, 'x', 0, 3).name("Scale x axis"); //first experiment
-  gui.add(addFuntionToButton, 'addNumber');
-  gui.add(cubeTree.material, 'opacity', 0, 1).name("Scale opacity"); //first experiment
-  gui.add(pearModel.position, 'y', 0, 3).name("y coordinates");
-}*/
 
 
 //Add test cube to scene, later to be replaced by in-game objects
@@ -814,11 +977,10 @@ function init()
 {
   scene.background = new THREE.Color(0xD9D9D9);
   
-  if(localStorage.getItem('GameData') != null) getGameValues();
+  if(localStorage.getItem('GameDataOne') != null) getGameValues(); //Load game values
 
-  addTree();
-  //addGUI(); //Debug menu
-  animate();
+  addTree(); //Add a clickable tree
+  animate(); //Animation initializations
 }
 
 init();
